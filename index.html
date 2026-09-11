@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>One Piece RPG — Batalha dos Piratas</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:radial-gradient(1000px 500px at 50% -10%,#14365a 0%,#06121f 60%);color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center}
+header{max-width:720px;width:100%;text-align:center;padding:16px 14px 4px}
+header h1{margin:4px 0;font-size:24px}header h1 span{color:#ffcf40}
+header p{color:#bcd3e8;font-size:13px;margin:0}
+main{max-width:720px;width:100%;padding:12px 14px 26px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}
+.card{background:#0e2236;border:1px solid #234a70;border-radius:14px;padding:12px;text-align:center;cursor:pointer;transition:.15s}
+.card:hover{transform:translateY(-2px);border-color:#ffcf40}
+.card .big{font-size:46px}.card h3{margin:6px 0 2px}.card small{color:#9db8d1;font-size:12px;line-height:1.5}
+.arena{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;background:#0b1e32;border:1px solid #234a70;border-radius:16px;padding:14px;margin:12px 0}
+.fighter{text-align:center;padding:8px}
+.fighter .spr{font-size:64px;display:inline-block}
+.fighter h2{margin:6px 0 2px;font-size:18px}.fighter small{color:#9db8d1}
+.bar{height:12px;background:#1a2f47;border-radius:99px;overflow:hidden;margin:6px 0;border:1px solid #2c4f76}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,#37e05c,#a8ff7a);transition:width .3s}
+.bar.en>i{background:linear-gradient(90deg,#ff3b3b,#ff9a3c)}
+.bar.mp>i{background:linear-gradient(90deg,#3cb6ff,#9be7ff)}
+.vs{font-size:26px;font-weight:900;color:#ffcf40}
+.actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:10px 0}
+button{background:#174a7a;border:1px solid #2c6aa3;color:#fff;border-radius:10px;padding:11px 10px;font-size:14px;cursor:pointer}
+button.primary{background:#d12f2f;border-color:#7d1515;font-weight:700}
+button.special{background:#6a3bd1;border-color:#3c1d86;font-weight:700}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:active{transform:scale(.97)}
+#log{background:#04101e;border:1px solid #1f3a55;border-radius:12px;padding:10px;height:170px;overflow-y:auto;font-size:13px;line-height:1.55}
+#log b{color:#ffcf40}
+.hud{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:8px 0}
+.pill{background:#0e2236;border:1px solid #234a70;border-radius:99px;padding:6px 12px;font-size:13px}
+.hidden{display:none!important}
+.shake{animation:shake .4s}.flash{animation:flash .5s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-5px)}}
+@keyframes flash{0%{filter:brightness(2)}100%{filter:brightness(1)}}
+footer{color:#7d99b5;font-size:12px;padding-bottom:18px;text-align:center}
+</style>
+</head>
+<body>
+<header>
+<h1>🏴‍☠️ <span>ONE PIECE RPG</span> — Batalha dos Piratas</h1>
+<p>Escolha seu pirata, vença 5 chefes e se torne o Rei dos Piratas!</p>
+</header>
+<main>
+<div class="hud">
+<span class="pill" id="hudStage">Fase 1/5</span>
+<span class="pill" id="hudLevel">Nv 1 • XP 0/60</span>
+<span class="pill" id="hudMeat">🍖 x3</span>
+<span class="pill" id="hudWins">🏆 Vitórias: 0</span>
+</div>
+
+<section id="screen-select">
+<h2>1️⃣ Escolha seu lutador</h2>
+<div class="grid" id="heroGrid"></div>
+</section>
+
+<section id="screen-battle" class="hidden">
+<h2 id="stageTitle">Fase 1 — Buggy 🤡</h2>
+<div class="arena">
+<div class="fighter" id="boxPlayer"><span class="spr" id="sprPlayer">👒</span><h2 id="namePlayer">Luffy</h2><small id="infoPlayer"></small><div class="bar"><i id="hpPlayer" style="width:100%"></i></div><small id="hpTxtPlayer"></small><div class="bar mp"><i id="mpPlayer" style="width:100%"></i></div><small id="mpTxtPlayer"></small></div>
+<div class="vs">VS</div>
+<div class="fighter" id="boxEnemy"><span class="spr" id="sprEnemy">🤡</span><h2 id="nameEnemy">Buggy</h2><small id="infoEnemy"></small><div class="bar en"><i id="hpEnemy" style="width:100%"></i></div><small id="hpTxtEnemy"></small></div>
+</div>
+<div class="actions">
+<button class="primary" id="btnAtk">👊 Ataque</button>
+<button class="special" id="btnSp">⚡ Especial (20⚡)</button>
+<button id="btnDef">🛡️ Defender</button>
+<button id="btnHeal">🍖 Comer carne</button>
+</div>
+<div id="log"></div>
+<div class="actions">
+<button id="btnRestart">🔄 Recomeçar</button>
+<button id="btnChange">🏴‍☠️ Trocar pirata</button>
+<button id="btnSound">🔊 Som: on</button>
+</div>
+</section>
+
+<section id="screen-end" class="hidden">
+<h2 id="endTitle">🏆 Você é o Rei dos Piratas!</h2>
+<p id="endText"></p>
+<button class="primary" id="btnAgain">⚓ Jogar de novo</button>
+</section>
+</main>
+<footer>Feito com HTML + CSS + JS • Sem imagens externas • Salva recorde no navegador</footer>
+<script>
+const HEROES=[
+{id:'luffy',name:'Luffy',emoji:'👒',desc:'Capitão • Gear 5',hp:130,atk:18,def:8,sp:'Gear 5: Gomu Gomu no Bajrang Gun',spDmg:36},
+{id:'zoro',name:'Zoro',emoji:'⚔️',desc:'Espadachim • 3 espadas',hp:115,atk:21,def:10,sp:'Santoryu Ogi: Sanzen Sekai',spDmg:40},
+{id:'sanji',name:'Sanji',emoji:'🦵',desc:'Cozinheiro • Diable Jambe',hp:110,atk:18,def:9,sp:'Diable Jambe: Concassé',spDmg:34},
+{id:'nami',name:'Nami',emoji:'🌩️',desc:'Navegadora • Zeus',hp:95,atk:16,def:6,sp:'Zeus: Thunderbolt Tempo',spDmg:32}];
+const ENEMIES=[
+{name:'Buggy, o Palhaço',emoji:'🤡',hp:65,atk:10,def:3,xp:40,talk:'Eu sou o Buggy-sama! Não me subestime!'},
+{name:'Arlong',emoji:'🦈',hp:90,atk:13,def:5,xp:55,talk:'Humanos são inferiores aos homens-peixe!'},
+{name:'Crocodile',emoji:'🐊',hp:115,atk:15,def:7,xp:70,talk:'Suna Suna no Mi... vire areia!'},
+{name:'Enel',emoji:'⚡',hp:140,atk:18,def:8,xp:90,talk:'Eu sou Deus! 200 milhões de volts!'},
+{name:'Kaido, o Dragão',emoji:'🐉',hp:180,atk:21,def:10,xp:150,talk:'Numa luta 1x1... aposte sempre em mim!'}];
+let S=null,soundOn=true,audio=null;
+function beep(f,d,t){if(!soundOn)return;try{audio=audio||new (window.AudioContext||window.webkitAudioContext)();const o=audio.createOscillator(),g=audio.createGain();o.type=t||'square';o.frequency.value=f;g.gain.value=0.05;o.connect(g);g.connect(audio.destination);o.start();g.gain.exponentialRampToValueAtTime(0.0001,audio.currentTime+d);o.stop(audio.currentTime+d);}catch(e){}}
+function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function log(msg){const el=document.getElementById('log');el.innerHTML+=msg+'<br/>';el.scrollTop=el.scrollHeight;}
+function wins(){return parseInt(localStorage.getItem('op_wins')||'0');}
+function setWins(v){localStorage.setItem('op_wins',v);document.getElementById('hudWins').textContent='🏆 Vitórias: '+v;}
+function renderHeroes(){const g=document.getElementById('heroGrid');g.innerHTML='';HEROES.forEach(h=>{const d=document.createElement('div');d.className='card';d.innerHTML='<div class="big">'+h.emoji+'</div><h3>'+h.name+'</h3><small>'+h.desc+'<br/>❤ '+h.hp+' • 👊 '+h.atk+' • 🛡 '+h.def+'<br/>⚡ '+h.sp+'</small>';d.onclick=()=>startGame(h.id);g.appendChild(d);});}
+function startGame(heroId){const base=HEROES.find(h=>h.id===heroId);
+S={base,level:1,xp:0,xpNext:60,maxHp:base.hp,hp:base.hp,maxMp:60,mp:60,meat:3,stage:0,defending:false,enemy:null,over:false};
+document.getElementById('screen-select').classList.add('hidden');
+document.getElementById('screen-end').classList.add('hidden');
+document.getElementById('screen-battle').classList.remove('hidden');
+document.getElementById('log').innerHTML='';
+startStage();beep(440,0.15);}
+function startStage(){const e=ENEMIES[S.stage];S.enemy={...e,maxHp:e.hp+e.hp*0.04*(S.level-1)|0};S.enemy.hp=S.enemy.maxHp;S.defending=false;
+document.getElementById('stageTitle').textContent='Fase '+(S.stage+1)+' — '+e.name+' '+e.emoji;
+log('🌊 <b>Fase '+(S.stage+1)+': '+e.name+' apareceu!</b> <i>"'+e.talk+'"</i>');updateUI();}
+function updateUI(){
+document.getElementById('sprPlayer').textContent=S.base.emoji;
+document.getElementById('namePlayer').textContent=S.base.name+' Nv '+S.level;
+document.getElementById('infoPlayer').textContent='👊'+(S.base.atk+S.level*2)+' 🛡'+(S.base.def+S.level);
+document.getElementById('hpPlayer').style.width=(100*S.hp/S.maxHp)+'%';
+document.getElementById('hpTxtPlayer').textContent='❤ '+Math.max(0,S.hp)+' / '+S.maxHp;
+document.getElementById('mpPlayer').style.width=(100*S.mp/S.maxMp)+'%';
+document.getElementById('mpTxtPlayer').textContent='⚡ '+S.mp+' / '+S.maxMp;
+document.getElementById('sprEnemy').textContent=S.enemy.emoji;
+document.getElementById('nameEnemy').textContent=S.enemy.name;
+document.getElementById('infoEnemy').textContent='👊'+S.enemy.atk+' 🛡'+S.enemy.def;
+document.getElementById('hpEnemy').style.width=(100*Math.max(0,S.enemy.hp)/S.enemy.maxHp)+'%';
+document.getElementById('hpTxtEnemy').textContent='❤ '+Math.max(0,S.enemy.hp)+' / '+S.enemy.maxHp;
+document.getElementById('hudStage').textContent='Fase '+(S.stage+1)+'/5';
+document.getElementById('hudLevel').textContent='Nv '+S.level+' • XP '+S.xp+'/'+S.xpNext;
+document.getElementById('hudMeat').textContent='🍖 x'+S.meat;
+document.getElementById('hudWins').textContent='🏆 Vitórias: '+wins();
+document.getElementById('btnSp').disabled=S.mp<20||S.over;
+document.getElementById('btnHeal').disabled=S.meat<=0||S.hp>=S.maxHp||S.over;
+['btnAtk','btnDef'].forEach(id=>document.getElementById(id).disabled=S.over);}
+function hitAnim(id,cls){const el=document.getElementById(id);el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls);}
+function playerHit(dmg){if(S.defending){dmg=Math.max(1,Math.round(dmg*0.35));S.defending=false;log('🛡️ Defesa reduziu o dano!');}S.hp-=dmg;hitAnim('boxPlayer','shake');beep(150,0.25,'sawtooth');}
+function enemyHit(dmg){dmg=Math.max(1,dmg-S.enemy.def+rnd(-2,2));S.enemy.hp-=dmg;hitAnim('boxEnemy','shake');hitAnim('boxEnemy','flash');return dmg;}
+function gainXp(n){S.xp+=n;log('✨ +'+n+' XP!');if(S.xp>=S.xpNext){S.level++;S.xp-=S.xpNext;S.xpNext=Math.round(S.xpNext*1.4);S.maxHp+=14;S.hp=S.maxHp;S.mp=S.maxMp;S.meat++;log('🎉 <b>LEVEL UP! Nv '+S.level+'</b> — vida cheia +1 🍖!');beep(880,0.3);}}
+function endBattle(win){
+if(win){log('☠️ <b>'+S.enemy.name+' derrotado!</b>');gainXp(S.enemy.xp);S.mp=Math.min(S.maxMp,S.mp+15);
+if(S.stage>=ENEMIES.length-1){S.over=true;updateUI();return victory();}
+S.stage++;setTimeout(()=>{if(!S.over){startStage();}},900);}
+else{S.over=true;updateUI();document.getElementById('screen-battle').classList.add('hidden');const e=document.getElementById('screen-end');e.classList.remove('hidden');document.getElementById('endTitle').textContent='☠️ Derrotado na fase '+(S.stage+1)+'...';document.getElementById('endText').textContent='O '+S.enemy.name+' venceu desta vez. Upou até Nv '+S.level+'. Tente de novo, futuro Rei dos Piratas!';}
+updateUI();}
+function victory(){S.over=true;setWins(wins()+1);document.getElementById('screen-battle').classList.add('hidden');const e=document.getElementById('screen-end');e.classList.remove('hidden');document.getElementById('endTitle').textContent='🏆 Você é o Rei dos Piratas!';document.getElementById('endText').textContent=S.base.name+' derrotou Kaido com Nv '+S.level+'! Recompensa: 3.000.000.000 Berries! 🏴‍☠️';beep(660,0.2);setTimeout(()=>beep(880,0.3),200);}
+function lock(v){S.over=v;updateUI();}
+function doAtk(){if(S.over)return;const atk=S.base.atk+S.level*2+rnd(-3,4);const d=enemyHit(atk);log('👊 <b>'+S.base.name+'</b> ataca: <b>'+d+'</b> de dano!');beep(500,0.08);updateUI();if(S.enemy.hp<=0)return endBattle(true);setTimeout(enemyTurn,650);lock(true);setTimeout(()=>lock(false),650);}
+function doSp(){if(S.over||S.mp<20)return;S.mp-=20;const dmg=S.base.spDmg+S.level*2+rnd(0,6);const d=enemyHit(dmg);log('⚡ <b>'+S.base.sp+'</b>: <b>'+d+'</b> de dano!');beep(300,0.3,'sawtooth');updateUI();if(S.enemy.hp<=0)return endBattle(true);setTimeout(enemyTurn,650);lock(true);setTimeout(()=>lock(false),650);}
+function doDef(){if(S.over)return;S.defending=true;S.mp=Math.min(S.maxMp,S.mp+10);log('🛡️ <b>'+S.base.name+'</b> se defendeu (+10⚡).');updateUI();setTimeout(enemyTurn,500);}
+function doHeal(){if(S.over||S.meat<=0||S.hp>=S.maxHp)return;S.meat--;const heal=Math.min(S.maxHp-S.hp,40+rnd(0,15));S.hp+=heal;log('🍖 Comeu carne: +'+heal+' ❤!');beep(700,0.15);updateUI();setTimeout(enemyTurn,650);lock(true);setTimeout(()=>lock(false),650);}
+function enemyTurn(){if(S.over||S.enemy.hp<=0)return;const roll=Math.random();let dmg;
+if(roll<0.18){dmg=Math.round(S.enemy.atk*1.6);log('😡 <b>'+S.enemy.name+'</b> usou ESPECIAL: <b>'+Math.max(1,dmg-S.base.def)+'</b>!');}
+else{dmg=S.enemy.atk+rnd(-3,4);}
+dmg=Math.max(1,dmg-(S.base.def+S.level)+rnd(-2,2));playerHit(dmg);log('💥 '+S.enemy.name+' causou <b>'+dmg+'</b> em você!');S.mp=Math.min(S.maxMp,S.mp+6);updateUI();if(S.hp<=0){log('☠️ Você caiu...');return endBattle(false);}}
+document.getElementById('btnAtk').onclick=doAtk;
+document.getElementById('btnSp').onclick=doSp;
+document.getElementById('btnDef').onclick=doDef;
+document.getElementById('btnHeal').onclick=doHeal;
+document.getElementById('btnRestart').onclick=()=>{if(S)startGame(S.base.id);};
+document.getElementById('btnChange').onclick=()=>{document.getElementById('screen-battle').classList.add('hidden');document.getElementById('screen-end').classList.add('hidden');document.getElementById('screen-select').classList.remove('hidden');};
+document.getElementById('btnAgain').onclick=()=>{document.getElementById('screen-end').classList.add('hidden');document.getElementById('screen-select').classList.remove('hidden');};
+document.getElementById('btnSound').onclick=e=>{soundOn=!soundOn;e.target.textContent=soundOn?'🔊 Som: on':'🔇 Som: off';};
+renderHeroes();setWins(wins());
+</script>
+</body>
+</html>
