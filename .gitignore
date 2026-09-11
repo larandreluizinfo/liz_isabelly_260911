@@ -1,9 +1,0 @@
-# Windows / Node / Python
-node_modules/
-dist/
-build/
-.env
-__pycache__/
-*.pyc
-.DS_Store
-Thumbs.db
